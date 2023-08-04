@@ -1,67 +1,83 @@
 <script lang="ts">
+	import type { Data } from '$lib/models';
+	import { siteId } from '$lib/stores';
 	import { onMount } from 'svelte';
-
-	export let rootdir;
 
 	let fileList: any;
 	let breadcrumbs: any[] = [];
+	let root: string;
+	let drive: any;
+	let filelistquery = '';
+
+	const initcrumbs = () => (breadcrumbs = [{ id: fileList?.itemId, name: 'Home' }]);
+	$: {
+		root = $siteId ? `sites/${$siteId}/drive` : '/me/drive';
+		filelistquery = `${root}/root/children?expand=thumbnails`;
+		initcrumbs();
+	}
+	onMount(() => initcrumbs());
+
+	const getDrive = ({ detail: { response, error } }: Data) => (drive = response || null);
 
 	const clicked = (item: any) => {
-		if (!item.detail || !item.detail.folder) return;
-		fileList.itemId = item.detail.id; // render new list
+		if (!item.detail) return;
+		// fileList.itemId = item.detail.id; // render new list
+		filelistquery = `${root}/items/${item.detail.id}/children?expand=thumbnails`;
 		breadcrumbs = [...breadcrumbs, { id: item.detail.id, name: item.detail.name }];
-		console.log(breadcrumbs);
 	};
 
 	const moveto = (id: number, itemId: string) => {
 		breadcrumbs = breadcrumbs.splice(0, id + 1);
-		fileList.itemId = itemId;
+		// fileList.itemId = itemId;
+		filelistquery = itemId
+			? `${root}/items/${itemId}/children?expand=thumbnails`
+			: `${root}/root/children?expand=thumbnails`;
 	};
-
-	onMount(() => {
-		breadcrumbs = [{ id: fileList.itemId, name: 'Files' }];
-	});
 </script>
 
-<ul class="breadcrumb" id="nav">
+<fluent-divider />
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<fluent-button on:click={() => fileList.reload(true)}>Reload files</fluent-button>
+<fluent-divider />
+
+<fluent-breadcrumb>
 	{#each breadcrumbs as crumb, idx}
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		<li><a on:click={() => moveto(idx, crumb.id)} id={crumb.id}>{crumb.name}</a></li>
+		<fluent-breadcrumb-item href={''} on:click={() => moveto(idx, crumb.id)}>
+			{crumb.name}
+		</fluent-breadcrumb-item>
 	{/each}
-</ul>
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<mgt-file-list  class="file-list" bind:this={fileList} on:itemClick={clicked} />
+</fluent-breadcrumb>
+
+{#if root}
+	<mgt-get resource={`${root}`} type="json" on:dataChange={getDrive} />
+{/if}
+
+<mgt-file-list
+	class="file-list"
+	bind:this={fileList}
+	on:itemClick={clicked}
+	file-list-query={filelistquery}
+>
+	<template data-type="file">
+		<mgt-file
+			file-query={`${root}/items/{{file.id}}`}
+			file-icon={'{{ file.thumbnails[0].small.url }}'}
+		/>
+	</template>
+	<template data-type="loading">
+		<div class="root">loading file</div>
+	</template>
+	<template data-type="no-data">
+		<div class="root">there is no data</div>
+	</template>
+</mgt-file-list>
 
 <style>
-	ul.breadcrumb {
-		margin: 0;
-		padding: 10px 16px;
-		list-style: none;
-		background-color: var(--neutral-layer-1);
-		font-size: 12px;
-	}
-
-	ul.breadcrumb li {
-		display: inline;
+	fluent-breadcrumb-item {
 		cursor: pointer;
-	}
-
-	ul.breadcrumb li + li:before {
-		padding: 8px;
-		color: var(--foreground-on-accent-fill);
-		content: '/';
-	}
-
-	ul.breadcrumb li a {
-		color: var(--accent-fill-rest);
-		text-decoration: none;
-	}
-
-	ul.breadcrumb li a:hover {
-		color: var(--accent-fill-hover);
-		text-decoration: underline;
 	}
 
 	.file-list {
@@ -87,17 +103,33 @@
 		--file-upload-dialog-height: 100px;
 		--file-upload-dialog-padding: 36px;
 
+		/** mgt-file-list CSS tokens */
+		--file-list-box-shadow: none;
+		--file-list-padding: 0;
+		/* 
+			--file-list-background-color: #e0f8db;
+			--file-list-border: 4px dotted #ffbdc3;
+			--file-list-border-radius: 10px;
+			--file-list-margin: 0;
+			--show-more-button-background-color: #fef8dd;
+			--show-more-button-background-color--hover: #ffe7c7;
+			--show-more-button-font-size: 14px;
+			--show-more-button-padding: 16px;
+			--show-more-button-border-bottom-right-radius: 12px;
+			--show-more-button-border-bottom-left-radius: 12px; 
+		*/
+
 		/** mgt-file custom styling */
-		--file-type-icon-height: 30px;
+		--file-type-icon-size: 30px;
 		--file-border: 4px dotted #ffbdc3;
 		--file-border-radius: 8px;
 		--file-box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
 		--file-background-color: #e0f8db;
 		--file-background-color-focus: yellow;
 		--file-background-color-hover: green;
-		--file-padding: .8px;
+		--file-item-padding: 8px;
 		--file-padding-inline-start: 12px;
-		--file-margin: .3px .4px;
+		--file-item-margin: 2px 4px;
 		--file-line1-font-size: 1.5px;
 		--file-line1-font-weight: 500;
 		--file-line1-color: gray;
@@ -110,19 +142,5 @@
 		--file-line3-font-weight: 500;
 		--file-line3-color: purple;
 		--file-line3-text-transform: capitalize;
-
-		/** mgt-file-list CSS tokens */
-		--file-list-background-color: #e0f8db;
-		--file-list-box-shadow: none;
-		--file-list-border: 4px dotted #ffbdc3;
-		--file-list-border-radius: 10px;
-		--file-list-padding: 0;
-		--file-list-margin: 0;
-		--show-more-button-background-color: #fef8dd;
-		--show-more-button-background-color--hover: #ffe7c7;
-		--show-more-button-font-size: 14px;
-		--show-more-button-padding: 16px;
-		--show-more-button-border-bottom-right-radius: 12px;
-		--show-more-button-border-bottom-left-radius: 12px;
 	}
 </style>

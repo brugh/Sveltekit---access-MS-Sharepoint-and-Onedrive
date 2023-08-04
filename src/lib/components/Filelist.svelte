@@ -71,7 +71,7 @@
 		<div class="root">loading file</div>
 	</template>
 	<template data-type="no-data">
-		<div class="root">there is no data</div>
+		<div class="root">No files here</div>
 	</template>
 </mgt-file-list>
 

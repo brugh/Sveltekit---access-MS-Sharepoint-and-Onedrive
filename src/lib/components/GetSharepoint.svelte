@@ -5,20 +5,16 @@
 	let sites: any[] = [];
 	let combo: any;
 
-	const getSites = ({ detail: { response, error } }: Data) => {
-		if (response) sites = [...response.value];
-	};
-	const newSite = (e: EventData) => {
-		if (e.target.value.indexOf(',') > 0) setSite(e.target.value);
-	};
-	const setSite = (id: string) => {
-		$siteId = id;
-	};
+	const getSites = ({ detail: { response, error } }: Data) =>
+		response && (sites = [...response.value]);
+	
+	const newSite = (e: EventData) => e.target.value.indexOf(',') > 0 && setSite(e.target.value);
+	const setSite = (id: string) => ($siteId = id);
 
 	const check = (id: string, name: string) => {
 		if ($siteId === id) {
-			setSite(id);
 			combo.control.value = name;
+			setSite(id);
 			return true;
 		}
 	};

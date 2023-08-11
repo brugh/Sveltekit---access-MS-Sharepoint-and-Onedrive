@@ -1,12 +1,11 @@
 <script lang="ts">
 	import "../app.css"
 	import { PUBLIC_CLIENT_ID, PUBLIC_REDIRECT_URI } from '$env/static/public';
-	import { siteId, user } from '$lib/stores';
+	import { user } from '$lib/stores';
 	import { onMount } from 'svelte';
 
 	let login: any;
 	const loggedIn = (e: Event) => user.set(login?.__userDetails);
-	siteId.useLocalStorage();
 
 	onMount(() => {$user = login?.__userDetails})
 </script>

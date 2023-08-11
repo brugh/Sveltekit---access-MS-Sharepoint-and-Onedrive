@@ -20,10 +20,12 @@
 	const getDrive = ({ detail: { response, error } }: Data) => (drive = response || null);
 
 	const clicked = (item: any) => {
+		// _layouts/15/WopiFrame.aspx?sourcedoc=
 		if (!item.detail) return;
-		// fileList.itemId = item.detail.id; // render new list
+		if (item.detail.file) return window.open(item.detail.webUrl);
 		filelistquery = `${root}/items/${item.detail.id}/children?expand=thumbnails`;
 		breadcrumbs = [...breadcrumbs, { id: item.detail.id, name: item.detail.name }];
+		// fileList.itemId = item.detail.id; // render new list
 	};
 
 	const moveto = (id: number, itemId: string) => {
@@ -63,6 +65,7 @@
 >
 	<template data-type="file">
 		<mgt-file
+			view="threelines"
 			file-query={`${root}/items/{{file.id}}`}
 			file-icon={'{{ file.thumbnails[0].small.url }}'}
 		/>

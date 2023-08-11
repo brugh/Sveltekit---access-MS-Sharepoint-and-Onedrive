@@ -15,5 +15,6 @@ const createWritableStore = (key: string, startValue: any) => {
   };
 }
 
-export const user: any | null = writable(null);
-export const siteId = createWritableStore('defaultSite', '')
+export const user = writable({});
+export const siteId = createWritableStore('defaultSite', '');
+siteId.useLocalStorage();
